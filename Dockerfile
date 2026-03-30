@@ -32,8 +32,9 @@ COPY . .
 
 # Ejecutamos scripts ahora que todo el proyecto está presente
 RUN composer run-script post-autoload-dump || true
-# npm/laravel assets
-RUN npm ci --silent && npm run build --silent
+# npm/laravel assets (fall back to npm install cuando no hay package-lock.json)
+RUN if [ -f package-lock.json ]; then npm ci --silent; else npm install --silent; fi \
+ && npm run build --silent
 
 # Generar caches de laravel
 RUN php artisan config:cache && php artisan route:cache && php artisan view:cache
