@@ -21,13 +21,17 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copiamos y instalamos composer primero para cachear capas
-COPY composer.json composer.lock ./
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+# Copiamos sólo archivos esenciales para composer antes para cachear capas
+COPY composer.json composer.lock artisan ./
+
+# Instalar dependencias sin ejecutar scripts (que dependen de artisan aún no copiado completamente)
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --no-scripts
 
 # Copiamos el resto del proyecto
 COPY . .
 
+# Ejecutamos scripts ahora que todo el proyecto está presente
+RUN composer run-script post-autoload-dump || true
 # npm/laravel assets
 RUN npm ci --silent && npm run build --silent
 
